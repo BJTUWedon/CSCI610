@@ -9,6 +9,7 @@
 
   // the textures
   let worldTexture;
+  let myimageTexture;
 
   // VAOs for the objects
   var mySphere = null;
@@ -34,14 +35,6 @@
 // Any additional images that you include will need to
 // set up as well.
 //
-let fun = () => console.log('time out');
-let sleep = function(fun,time){
-  setTimeout(()=>{
-    fun();
-  },time);
-}
-
-
 function setUpTextures(){
 
     // get some texture space from the gpu
@@ -52,16 +45,37 @@ function setUpTextures(){
     var worldImage = document.getElementById ('world-texture')
     worldImage.crossOrigin = "";
 
+    worldImage.onload = () =>{
     // bind the texture so we can perform operations on it
     gl.bindTexture (gl.TEXTURE_2D, worldTexture);
-    sleep(fun,1);
+
     // load the texture data
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, worldImage.width, worldImage.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, worldImage);
 
     // set texturing parameters
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);}
+
+    // get some texture space from the gpu
+    myimageTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, myimageTexture);
+
+    // load the actual image
+    var myImage = document.getElementById ('myImage-texture')
+    myImage.crossOrigin = "";
+
+    myImage.onload = () =>{
+    // bind the texture so we can perform operations on it
+    gl.bindTexture (gl.TEXTURE_2D, myimageTexture);
+
+    // load the texture data
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, myImage.width, myImage.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, myImage);
+
+    // set texturing parameters
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);}
 }
 
 //
@@ -84,11 +98,24 @@ function drawCurrentShape () {
     // set up your uniform variables for drawing
     gl.useProgram (program);
 
+    if (curTexture == "globe"){
+      gl.activeTexture (gl.TEXTURE0);
+      gl.bindTexture (gl.TEXTURE_2D, worldTexture);
+      gl.uniform1i (program.uTheTexture, 0);
+      gl.uniform1i (program.uType, 0);
+    } else if (curTexture == "myimage"){
+      gl.activeTexture (gl.TEXTURE1);
+      gl.bindTexture (gl.TEXTURE_2D, myimageTexture);
+      gl.uniform1i (program.uTheTexture, 1);
+      gl.uniform1i (program.uType, 1);
+    } else if (curTexture == "proc") {
+      gl.uniform1i (program.uType, 2);
+    } else {
+      console.log("error about paramethers")
+    }
     // set up texture uniform & other uniforms that you might
     // have added to the shader
-    gl.activeTexture (gl.TEXTURE0);
-    gl.bindTexture (gl.TEXTURE_2D, worldTexture);
-    gl.uniform1i (program.uTheTexture, 0);
+
 
     // set up rotation uniform
     gl.uniform3fv (program.uTheta, new Float32Array(angles));
@@ -128,6 +155,7 @@ function initProgram (vertexid, fragmentid) {
   // uniforms - you will need to add references for any additional
   // uniforms that you add to your shaders
   program.uTheTexture = gl.getUniformLocation (program, 'theTexture');
+  program.uType = gl.getUniformLocation (program, 'theType');
   program.uTheta = gl.getUniformLocation (program, 'theta');
 
   return program;
